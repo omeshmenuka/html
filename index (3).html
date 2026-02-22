@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Touchless Doorbell | Arduino Uno Project</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --text:#eaf0ff;
+      --muted:#b9c4e6;
+      --accent:#6aa6ff;
+      --accent2:#7cffc2;
+      --border:rgba(255,255,255,.12);
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --max:1100px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(106,166,255,.25), transparent 55%),
+        radial-gradient(900px 600px at 90% 0%, rgba(124,255,194,.18), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      line-height:1.6;
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: rgba(11,16,32,.70);
+      border-bottom:1px solid var(--border);
+    }
+    .nav{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:14px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:800;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .badge{
+      font-size:12px;
+      padding:4px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      color:var(--muted);
+      background: rgba(255,255,255,.05);
+    }
+    nav ul{
+      list-style:none; margin:0; padding:0;
+      display:flex; gap:8px; flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    nav a{
+      text-decoration:none;
+      font-size:13px;
+      padding:7px 10px;
+      border-radius:999px;
+      color:var(--muted);
+      border:1px solid transparent;
+    }
+    nav a:hover{
+      color:var(--text);
+      border-color: var(--border);
+      background: rgba(255,255,255,.06);
+    }
+
+    .hero{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:40px 18px 14px;
+      display:grid;
+      gap:16px;
+      grid-template-columns: 1.15fr .85fr;
+    }
+    @media (max-width:980px){ .hero{grid-template-columns:1fr} }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:18px;
+    }
+    .hero-card{
+      padding:22px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero-card:before{
+      content:"";
+      position:absolute; inset:-80px -120px auto auto;
+      width:300px; height:300px;
+      background: radial-gradient(circle at 30% 30%, rgba(106,166,255,.35), transparent 60%);
+      transform: rotate(18deg);
+      pointer-events:none;
+    }
+    .kicker{
+      margin:0 0 6px 0;
+      color:var(--muted);
+      font-size:14px;
+    }
+    h1{
+      margin:0 0 10px 0;
+      font-size:34px;
+      line-height:1.15;
+    }
+    .sub{
+      margin:0 0 14px 0;
+      color:var(--muted);
+      font-size:16px;
+    }
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      font-size:13px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color:var(--muted);
+    }
+    .cta{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      text-decoration:none;
+      font-size:14px;
+    }
+    .btn.primary{
+      border-color: rgba(106,166,255,.45);
+      background: linear-gradient(180deg, rgba(106,166,255,.25), rgba(106,166,255,.12));
+    }
+    .btn:hover{filter: brightness(1.08)}
+
+    .side-grid{display:grid; gap:14px}
+    .mini h3{margin:0 0 6px 0; font-size:16px}
+    .mini p{margin:0; color:var(--muted); font-size:14px}
+    .note{
+      margin-top:12px;
+      padding:12px;
+      border-radius:12px;
+      border:1px dashed rgba(255,255,255,.18);
+      color:var(--muted);
+      background: rgba(0,0,0,.12);
+      font-size:14px;
+    }
+
+    main{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:14px 18px 60px;
+      display:grid;
+      gap:16px;
+    }
+    section{
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: var(--shadow);
+    }
+    section h2{
+      margin:0 0 10px 0;
+      font-size:20px;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width:920px){ .grid2{grid-template-columns:1fr} }
+
+    .list{margin:0; padding-left:18px; color:var(--muted)}
+    .muted{color:var(--muted); margin-top:0}
+    figure{
+      margin:0;
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+      background: rgba(0,0,0,.14);
+    }
+    figcaption{
+      padding:10px 12px;
+      font-size:13px;
+      color:var(--muted);
+      border-top:1px solid var(--border);
+    }
+    .svgwrap{padding:10px}
+    .code{
+      margin:0;
+      padding:14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      overflow:auto;
+      color:#e9efff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size:13px;
+      line-height:1.55;
+      white-space:pre;
+    }
+    footer{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:20px 18px 40px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .hr{height:1px; background: var(--border); margin:16px 0 10px}
+    .pill{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color:var(--muted);
+      font-size:12px;
+      margin-left:6px;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="nav">
+    <div class="brand">
+      <span>🔔 Touchless Doorbell</span>
+      <span class="badge">Arduino Uno</span>
+    </div>
+
+    <nav>
+      <ul>
+        <li><a href="#intro">Intro</a></li>
+        <li><a href="#problem">Problem</a></li>
+        <li><a href="#objective">Objective</a></li>
+        <li><a href="#components">Components</a></li>
+        <li><a href="#working">Working</a></li>
+        <li><a href="#circuit">Circuit</a></li>
+        <li><a href="#algorithm">Algorithm</a></li>
+        <li><a href="#applications">Applications</a></li>
+        <li><a href="#future">Future</a></li>
+        <li><a href="#conclusion">Conclusion</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div class="card hero-card">
+    <p class="kicker">Mini Lab Project • Breadboard Friendly • Useful</p>
+    <h1>Touchless Doorbell using Arduino Uno + HC-SR04</h1>
+    <p class="sub">
+      A contactless doorbell that rings when a hand is detected near the ultrasonic sensor.
+      Useful for hygienic environments like homes, offices, schools, labs, and hospitals.
+    </p>
+
+    <div class="chips">
+      <span class="chip">Sensor: HC-SR04</span>
+      <span class="chip">Output: Buzzer</span>
+      <span class="chip">Logic: Distance Threshold</span>
+      <span class="chip">Build Time: ~1 day</span>
+    </div>
+
+    <div class="cta">
+      <a class="btn primary" href="#circuit">Circuit “Photo”</a>
+      <a class="btn" href="#working">Working</a>
+      <a class="btn" href="#algorithm">Algorithm</a>
+    </div>
+
+    <div class="note">
+      ✅ This page contains built-in AI illustrations (SVG) so you don’t need to add images.
+      <span class="pill">Single HTML File</span>
+    </div>
+  </div>
+
+  <div class="side-grid">
+    <div class="card mini">
+      <h3>Quick Demo</h3>
+      <p>Move your hand within <b>~10 cm</b> of the sensor → buzzer rings.</p>
+    </div>
+    <div class="card mini">
+      <h3>Best For</h3>
+      <p>Lab demo + easy viva questions (sensor, distance calculation, threshold).</p>
+    </div>
+    <div class="card mini">
+      <h3>Parts Used</h3>
+      <p>Arduino Uno, HC-SR04, buzzer, breadboard, jumper wires.</p>
+    </div>
+  </div>
+</div>
+
+<main>
+  <section id="intro">
+    <h2>1. Introduction</h2>
+    <p class="muted">
+      Traditional doorbells require physical contact. This project creates a touchless doorbell using an ultrasonic sensor
+      to detect a hand nearby and activate a buzzer. The system is compact, low-cost, and easy to build in a lab.
+    </p>
+  </section>
+
+  <section id="problem">
+    <h2>2. Problem Statement</h2>
+    <ul class="list">
+      <li>Push-type doorbells require touching a common surface.</li>
+      <li>Touch surfaces can spread germs and bacteria.</li>
+      <li>A contactless solution improves hygiene and convenience.</li>
+    </ul>
+  </section>
+
+  <section id="objective">
+    <h2>3. Objectives</h2>
+    <ul class="list">
+      <li>Detect a hand/object within a set distance using HC-SR04.</li>
+      <li>Trigger a buzzer as a doorbell alert.</li>
+      <li>Keep the design small and suitable for lab demonstration.</li>
+    </ul>
+  </section>
+
+  <section id="components">
+    <h2>4. Components Required</h2>
+    <div class="grid2">
+      <div>
+        <ul class="list">
+          <li>Arduino Uno</li>
+          <li>Ultrasonic Sensor (HC-SR04)</li>
+          <li>Active Buzzer (recommended) or Passive Buzzer</li>
+          <li>Breadboard</li>
+          <li>Jumper wires</li>
+        </ul>
+        <div class="note">
+          Optional: LED + 220Ω resistor (visual ring indicator).
+        </div>
+      </div>
+
+      <figure>
+        <div class="svgwrap">
+          <!-- AI "photo" style components flatlay (SVG) -->
+          <svg viewBox="0 0 760 420" width="100%" height="auto" role="img" aria-label="Components illustration">
+            <defs>
+              <linearGradient id="g1" x1="0" x2="1">
+                <stop offset="0" stop-color="rgba(106,166,255,.35)"/>
+                <stop offset="1" stop-color="rgba(124,255,194,.25)"/>
+              </linearGradient>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(0,0,0,.45)"/>
+              </filter>
+            </defs>
+
+            <rect x="0" y="0" width="760" height="420" rx="18" fill="rgba(0,0,0,.18)"/>
+            <rect x="22" y="22" width="716" height="376" rx="16" fill="url(#g1)" opacity="0.12"/>
+
+            <!-- Arduino UNO -->
+            <g filter="url(#shadow)">
+              <rect x="48" y="70" width="280" height="230" rx="18" fill="#18305e" stroke="rgba(255,255,255,.18)"/>
+              <rect x="78" y="100" width="160" height="80" rx="10" fill="#0f1f3f" stroke="rgba(255,255,255,.12)"/>
+              <circle cx="265" cy="140" r="26" fill="#0f1f3f" stroke="rgba(255,255,255,.12)"/>
+              <rect x="78" y="205" width="220" height="18" rx="9" fill="#0f1f3f" opacity="0.8"/>
+              <rect x="78" y="235" width="220" height="18" rx="9" fill="#0f1f3f" opacity="0.7"/>
+              <text x="62" y="58" fill="rgba(255,255,255,.85)" font-size="16" font-weight="700">Arduino Uno</text>
+            </g>
+
+            <!-- HC-SR04 -->
+            <g filter="url(#shadow)">
+              <rect x="380" y="80" width="330" height="120" rx="18" fill="#263a7a" stroke="rgba(255,255,255,.18)"/>
+              <circle cx="460" cy="140" r="34" fill="#0f1f3f" stroke="rgba(255,255,255,.22)"/>
+              <circle cx="610" cy="140" r="34" fill="#0f1f3f" stroke="rgba(255,255,255,.22)"/>
+              <rect x="405" y="178" width="280" height="14" rx="7" fill="rgba(255,255,255,.10)"/>
+              <text x="394" y="70" fill="rgba(255,255,255,.85)" font-size="16" font-weight="700">HC-SR04 Sensor</text>
+            </g>
+
+            <!-- Buzzer -->
+            <g filter="url(#shadow)">
+              <circle cx="475" cy="300" r="52" fill="#2a2f55" stroke="rgba(255,255,255,.20)"/>
+              <circle cx="475" cy="300" r="24" fill="rgba(0,0,0,.25)"/>
+              <text x="430" y="378" fill="rgba(255,255,255,.85)" font-size="16" font-weight="700">Buzzer</text>
+            </g>
+
+            <!-- Wires -->
+            <g>
+              <path d="M320,190 C370,190 355,140 380,140" stroke="rgba(124,255,194,.75)" stroke-width="5" fill="none"/>
+              <path d="M320,210 C390,210 370,300 422,300" stroke="rgba(106,166,255,.85)" stroke-width="5" fill="none"/>
+              <text x="48" y="360" fill="rgba(255,255,255,.65)" font-size="13">Jumper wires + Breadboard (not shown)</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Figure 1: Components (AI illustration)</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="working">
+    <h2>5. Working Principle</h2>
+    <div class="grid2">
+      <div>
+        <p class="muted">
+          The HC-SR04 sends ultrasonic waves and listens for the echo. Arduino measures echo time and converts it to distance.
+          If distance is less than a threshold (example: 10 cm), the buzzer turns ON.
+        </p>
+        <ul class="list">
+          <li>Send trigger pulse</li>
+          <li>Read echo duration</li>
+          <li>Calculate distance</li>
+          <li>Compare with threshold</li>
+          <li>Ring buzzer (doorbell)</li>
+        </ul>
+
+        <div class="note">
+          Distance (cm) ≈ <b>(duration × 0.0343) / 2</b>
+        </div>
+      </div>
+
+      <figure>
+        <div class="svgwrap">
+          <!-- AI "working photo" illustration -->
+          <svg viewBox="0 0 760 420" width="100%" height="auto" role="img" aria-label="Working model illustration">
+            <defs>
+              <filter id="shadow2" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="rgba(0,0,0,.5)"/>
+              </filter>
+              <linearGradient id="bg2" x1="0" x2="1">
+                <stop offset="0" stop-color="rgba(106,166,255,.18)"/>
+                <stop offset="1" stop-color="rgba(124,255,194,.14)"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="760" height="420" rx="18" fill="rgba(0,0,0,.18)"/>
+            <rect x="24" y="24" width="712" height="372" rx="16" fill="url(#bg2)"/>
+
+            <!-- hand -->
+            <g opacity="0.95">
+              <path d="M120,210 C90,175 110,140 145,150 C160,120 190,122 195,150
+                       C210,125 240,132 235,165 C260,150 285,170 268,196
+                       C295,205 298,245 270,258
+                       C250,275 228,292 210,305
+                       C190,320 160,295 162,268
+                       C150,252 135,235 120,210 Z"
+                    fill="rgba(255,255,255,.85)"/>
+              <text x="92" y="340" fill="rgba(255,255,255,.75)" font-size="14">Hand near sensor</text>
+            </g>
+
+            <!-- sensor block -->
+            <g filter="url(#shadow2)">
+              <rect x="420" y="120" width="280" height="120" rx="18" fill="#263a7a" stroke="rgba(255,255,255,.18)"/>
+              <circle cx="495" cy="180" r="32" fill="#0f1f3f" stroke="rgba(255,255,255,.22)"/>
+              <circle cx="625" cy="180" r="32" fill="#0f1f3f" stroke="rgba(255,255,255,.22)"/>
+              <text x="438" y="112" fill="rgba(255,255,255,.85)" font-size="16" font-weight="700">HC-SR04</text>
+            </g>
+
+            <!-- waves -->
+            <g>
+              <path d="M410,165 C340,145 260,150 190,180" stroke="rgba(106,166,255,.75)" stroke-width="4" fill="none"/>
+              <path d="M410,185 C340,170 260,175 200,205" stroke="rgba(124,255,194,.75)" stroke-width="4" fill="none"/>
+              <path d="M410,205 C350,195 275,205 225,230" stroke="rgba(106,166,255,.55)" stroke-width="4" fill="none"/>
+              <text x="250" y="135" fill="rgba(255,255,255,.65)" font-size="13">Ultrasonic sensing</text>
+            </g>
+
+            <!-- buzzer -->
+            <g filter="url(#shadow2)">
+              <circle cx="540" cy="315" r="50" fill="#2a2f55" stroke="rgba(255,255,255,.20)"/>
+              <circle cx="540" cy="315" r="22" fill="rgba(0,0,0,.25)"/>
+              <path d="M610,300 C650,315 650,315 610,330" stroke="rgba(255,220,120,.9)" stroke-width="6" fill="none"/>
+              <path d="M625,285 C680,315 680,315 625,345" stroke="rgba(255,220,120,.65)" stroke-width="6" fill="none"/>
+              <text x="505" y="388" fill="rgba(255,255,255,.85)" font-size="16" font-weight="700">Buzzer rings</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Figure 2: Working Model (AI illustration)</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="circuit">
+    <h2>6. Circuit “Photo” + Connections</h2>
+    <div class="grid2">
+      <div>
+        <p class="muted">Standard pin connections used in this project:</p>
+        <ul class="list">
+          <li><b>HC-SR04 VCC</b> → 5V</li>
+          <li><b>HC-SR04 GND</b> → GND</li>
+          <li><b>HC-SR04 TRIG</b> → D9</li>
+          <li><b>HC-SR04 ECHO</b> → D10</li>
+          <li><b>Buzzer +</b> → D7</li>
+          <li><b>Buzzer −</b> → GND</li>
+        </ul>
+
+        <div class="note">
+          You can change pins in your Arduino code if needed.
+          For a passive buzzer, use <code>tone()</code>. For active buzzer, use HIGH/LOW.
+        </div>
+      </div>
+
+      <figure>
+        <div class="svgwrap">
+          <!-- AI circuit diagram (SVG) -->
+          <svg viewBox="0 0 760 420" width="100%" height="auto" role="img" aria-label="Circuit diagram illustration">
+            <defs>
+              <filter id="shadow3" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(0,0,0,.50)"/>
+              </filter>
+            </defs>
+            <rect x="0" y="0" width="760" height="420" rx="18" fill="rgba(0,0,0,.18)"/>
+
+            <!-- Arduino block -->
+            <g filter="url(#shadow3)">
+              <rect x="40" y="80" width="300" height="260" rx="18" fill="#18305e" stroke="rgba(255,255,255,.18)"/>
+              <text x="60" y="115" fill="rgba(255,255,255,.92)" font-size="18" font-weight="800">Arduino Uno</text>
+
+              <!-- pins -->
+              <text x="70" y="155" fill="rgba(255,255,255,.75)" font-size="14">5V</text>
+              <circle cx="115" cy="150" r="6" fill="rgba(255,255,255,.7)"/>
+
+              <text x="70" y="185" fill="rgba(255,255,255,.75)" font-size="14">GND</text>
+              <circle cx="115" cy="180" r="6" fill="rgba(255,255,255,.7)"/>
+
+              <text x="70" y="235" fill="rgba(255,255,255,.75)" font-size="14">D9 (TRIG)</text>
+              <circle cx="165" cy="230" r="6" fill="rgba(255,255,255,.7)"/>
+
+              <text x="70" y="265" fill="rgba(255,255,255,.75)" font-size="14">D10 (ECHO)</text>
+              <circle cx="175" cy="260" r="6" fill="rgba(255,255,255,.7)"/>
+
+              <text x="70" y="315" fill="rgba(255,255,255,.75)" font-size="14">D7 (BUZZ)</text>
+              <circle cx="170" cy="310" r="6" fill="rgba(255,255,255,.7)"/>
+            </g>
+
+            <!-- HC-SR04 block -->
+            <g filter="url(#shadow3)">
+              <rect x="420" y="70" width="300" height="150" rx="18" fill="#263a7a" stroke="rgba(255,255,255,.18)"/>
+              <text x="440" y="105" fill="rgba(255,255,255,.92)" font-size="18" font-weight="800">HC-SR04</text>
+
+              <text x="440" y="140" fill="rgba(255,255,255,.75)" font-size="14">VCC</text>
+              <circle cx="505" cy="136" r="6" fill="rgba(255,255,255,.7)"/>
+
+              <text x="440" y="170" fill="rgba(255,255,255,.75)" font-size="14">GND</text>
+              <circle cx="505" cy="166" r="6" fill="rgba(255,255,255,.7)"/>
+
+              <text x="580" y="140" fill="rgba(255,255,255,.75)" font-size="14">TRIG</text>
+              <circle cx="655" cy="136" r="6" fill="rgba(255,255,255,.7)"/>
+
+              <text x="580" y="170" fill="rgba(255,255,255,.75)" font-size="14">ECHO</text>
+              <circle cx="655" cy="166" r="6" fill="rgba(255,255,255,.7)"/>
+            </g>
+
+            <!-- Buzzer block -->
+            <g filter="url(#shadow3)">
+              <rect x="470" y="270" width="250" height="90" rx="18" fill="#2a2f55" stroke="rgba(255,255,255,.18)"/>
+              <text x="490" y="305" fill="rgba(255,255,255,.92)" font-size="18" font-weight="800">Buzzer</text>
+              <text x="490" y="335" fill="rgba(255,255,255,.75)" font-size="14">+  (to D7)</text>
+              <text x="620" y="335" fill="rgba(255,255,255,.75)" font-size="14">− (to GND)</text>
+            </g>
+
+            <!-- wires -->
+            <g>
+              <!-- 5V to VCC -->
+              <path d="M115,150 C240,150 320,136 505,136" stroke="rgba(124,255,194,.85)" stroke-width="5" fill="none"/>
+              <!-- GND to GND -->
+              <path d="M115,180 C250,200 320,166 505,166" stroke="rgba(255,255,255,.55)" stroke-width="5" fill="none"/>
+              <!-- D9 to TRIG -->
+              <path d="M165,230 C310,230 380,136 655,136" stroke="rgba(106,166,255,.85)" stroke-width="5" fill="none"/>
+              <!-- D10 to ECHO -->
+              <path d="M175,260 C320,260 380,166 655,166" stroke="rgba(106,166,255,.65)" stroke-width="5" fill="none"/>
+
+              <!-- D7 to buzzer + -->
+              <path d="M170,310 C300,310 400,315 480,315" stroke="rgba(255,220,120,.85)" stroke-width="5" fill="none"/>
+              <!-- GND to buzzer - -->
+              <path d="M115,180 C210,355 520,355 690,335" stroke="rgba(255,255,255,.45)" stroke-width="5" fill="none"/>
+
+              <text x="42" y="390" fill="rgba(255,255,255,.55)" font-size="13">
+                Wire colors are for clarity only.
+              </text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Figure 3: Circuit Diagram (AI illustration)</figcaption>
+      </figure>
+    </div>
+
+    <div class="note">
+      You also have your real image <b>circuit.png</b> — you can add it as another figure later if you want.
+    </div>
+  </section>
+
+  <section id="algorithm">
+    <h2>7. Algorithm / Flowchart</h2>
+    <div class="code">START
+  |
+  |-- Set pin modes (TRIG=OUTPUT, ECHO=INPUT, BUZZER=OUTPUT)
+  |
+  |-- LOOP:
+  |     Send TRIG pulse (10 microseconds)
+  |     Measure echo duration
+  |     Calculate distance (cm)
+  |     IF distance < threshold (e.g., 10 cm)
+  |         Buzzer ON
+  |     ELSE
+  |         Buzzer OFF
+  |
+REPEAT</div>
+  </section>
+
+  <section id="applications">
+    <h2>8. Applications</h2>
+    <ul class="list">
+      <li>Homes and apartments</li>
+      <li>Hospitals and clinics (hygiene)</li>
+      <li>Schools, offices, labs</li>
+      <li>Reception counters / public places</li>
+    </ul>
+  </section>
+
+  <section id="future">
+    <h2>9. Future Improvements</h2>
+    <ul class="list">
+      <li>Add LED indicator and multiple buzzer patterns</li>
+      <li>Add LCD/OLED display for status</li>
+      <li>Add Bluetooth/Wi-Fi notification to phone</li>
+      <li>Add adjustable threshold using potentiometer</li>
+    </ul>
+  </section>
+
+  <section id="conclusion">
+    <h2>10. Conclusion</h2>
+    <p class="muted">
+      The Touchless Doorbell is a simple and useful Arduino project. It uses ultrasonic distance sensing to ring a buzzer
+      without physical contact, making it hygienic, low-cost, and ideal for lab demonstrations.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <div class="hr"></div>
+  <div>
+    <b>Prepared by:</b> Your Name • <b>Class:</b> ___ • <b>Roll No:</b> ___ • <b>College:</b> ___
+  </div>
+  <div style="margin-top:6px;">© 2026 • Touchless Doorbell Project</div>
+</footer>
+</body>
+</html>
